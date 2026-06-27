@@ -1,37 +1,21 @@
-name: Build APKs
+name: Build FOSS Debug APK
 
 on:
-  workflow_dispatch:
   push:
     branches: ["**"]
-    paths-ignore:
-      - "README.md"
-      - "fastlane/**"
-      - "assets/**"
-      - ".github/**/*.md"
-      - ".github/FUNDING.yml"
-      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  discussions: write
+  contents: read
 
 jobs:
-  build_release:
-    name: Build Release (${{ matrix.variant }})
-    if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
+  build:
+    name: Build FOSS Debug APK
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        include:
-          - variant: foss
-            variantName: Foss
-          - variant: gms
-            variantName: Gms
-
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -44,138 +28,34 @@ jobs:
       - name: Set Up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
-          cache-encryption-key: ${{ secrets.GRADLE_CACHE_KEY }}
           cache-cleanup: on-success
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Generate test keystore for CI
+      - name: Generate debug keystore
         run: |
           keytool -genkeypair -v \
-            -keystore app/ci-test.keystore \
+            -keystore app/debug.keystore \
             -storepass android \
             -alias androiddebugkey \
             -keypass android \
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
-            -dname "CN=CI Test,O=Metrolist,C=US"
-      - name: Verify keystore was created
-        run: |
-          if [ ! -f "app/ci-test.keystore" ]; then
-            echo "ERROR: Keystore file not created!"
-            exit 1
-          fi
-          ls -lh app/ci-test.keystore
-          keytool -list -keystore app/ci-test.keystore -storepass android -alias androiddebugkey
+            -dname "CN=Metrolist Debug,O=Metrolist,C=US"
 
-      - name: Build Release APK and Run Lint
-        run: ./gradlew --console=plain assemble${{ matrix.variantName }}Release :app:lint${{ matrix.variantName }}Release --warning-mode summary
+      - name: Build FOSS Debug APK
+        run: ./gradlew --console=plain assembleFossDebug --warning-mode summary
         env:
-          METROLIST_APPLICATION_ID: com.metrolist.music
-          METROLIST_APP_NAME: Metrolist Nightly
-          PULL_REQUEST: "false"
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
-
-      - name: Verify APK exists and check signature status
-        run: |
-          OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
-          echo "Listing APK files:"
-          ls -lh "$OUTPUT_DIR"/*.apk 2>/dev/null || echo "No APKs found in $OUTPUT_DIR"
-          
-          APK_PATH=$(find "$OUTPUT_DIR" -maxdepth 1 -name "*.apk" -type f | head -1)
-          if [ -z "$APK_PATH" ]; then
-            echo "ERROR: No APK file found!"
-            exit 1
-          fi
-          echo "Found APK: $APK_PATH"
-          
-          # Check if already signed
-          if "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK_PATH" 2>/dev/null; then
-            echo "WARNING: APK is already signed! This may cause issues."
-          else
-            echo "APK appears to be unsigned (expected)"
-          fi
-
-      - name: Sign APK
-        uses: ilharp/sign-android-release@v2.0.0
-        with:
-          releaseDir: app/build/outputs/apk/${{ matrix.variant }}/release/
-          signingKey: ${{ secrets.ANDROID_SIGNING_KEY || secrets.KEYSTORE || 'app/ci-test.keystore' }}
-          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS || 'androiddebugkey' }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD || 'android' }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD || 'android' }}
-          buildToolsVersion: 35.0.0
-
-      - name: Move signed APK
-        run: |
-          OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
-          mkdir -p "$OUTPUT_DIR/out"
-          if [ "${{ matrix.variant }}" = "gms" ]; then
-            TARGET_NAME="app-universal-with-Google-Cast.apk"
-          else
-            TARGET_NAME="app-universal-release.apk"
-          fi
-          find "$OUTPUT_DIR" -name "*-signed.apk" -o -name "*-unsigned-signed.apk" | xargs -I{} mv {} "$OUTPUT_DIR/out/$TARGET_NAME"
-
-      - name: Upload Signed APK
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.variant == 'gms' && 'app-with-Google-Cast' || 'app-release' }}
-          path: app/build/outputs/apk/${{ matrix.variant }}/release/out/*
-
-  build_debug:
-    name: Build Debug (${{ matrix.variant }})
-    if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        include:
-          - variant: foss
-            variantName: Foss
-          - variant: gms
-            variantName: Gms
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          java-version: "21"
-          distribution: "temurin"
-
-      - name: Set Up Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          cache-encryption-key: ${{ secrets.GRADLE_CACHE_KEY }}
-          cache-cleanup: on-success
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Restore Persistent Keystore
-        run: |
-          echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ./app/persistent-debug.keystore
-
-      - name: Build Debug APK and Run Lint
-        run: ./gradlew --console=plain assemble${{ matrix.variantName }}Debug :app:lint${{ matrix.variantName }}Debug --warning-mode summary
-        env:
-          METROLIST_APPLICATION_ID: com.metrolist.music
-          METROLIST_APP_NAME: Metrolist Nightly
-          PULL_REQUEST: "false"
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          METROLIST_APPLICATION_ID: com.metrolist.music.debug
+          METROLIST_APP_NAME: Metrolist Debug
+          METROLIST_DEBUG_KEYSTORE_PATH: debug.keystore
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.variant == 'gms' && 'app-debug-gms' || 'app-debug' }}
-          path: app/build/outputs/apk/${{ matrix.variant }}/debug/*.apk
+          name: metrolist-foss-debug-apk
+          path: app/build/outputs/apk/foss/debug/*.apk
