@@ -113,7 +113,17 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
 
+      - name: Check signing secrets
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.ANDROID_SIGNING_KEY }}" ] || [ -n "${{ secrets.KEYSTORE }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Sign APK
+        if: steps.check_secrets.outputs.available == 'true'
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/${{ matrix.variant }}/release/
@@ -124,6 +134,7 @@ jobs:
           buildToolsVersion: 35.0.0
 
       - name: Move and rename signed APKs
+        if: steps.check_secrets.outputs.available == 'true'
         run: |
           OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
           mkdir -p "$OUTPUT_DIR/out"
@@ -150,6 +161,7 @@ jobs:
           ls -la "$OUTPUT_DIR/out/"
 
       - name: Upload Signed APKs
+        if: steps.check_secrets.outputs.available == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.variant == 'gms' && 'Metrolist-with-Google-Cast' || matrix.variant == 'izzy' && 'Metrolist-izzy' || 'Metrolist' }}

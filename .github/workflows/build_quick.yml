@@ -50,7 +50,17 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
 
+      - name: Check signing secrets
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.ANDROID_SIGNING_KEY }}" ] || [ -n "${{ secrets.KEYSTORE }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Sign APK
+        if: steps.check_secrets.outputs.available == 'true'
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/foss/release/
@@ -61,12 +71,14 @@ jobs:
           buildToolsVersion: 35.0.0
 
       - name: Move signed APK
+        if: steps.check_secrets.outputs.available == 'true'
         run: |
           OUTPUT_DIR="app/build/outputs/apk/foss/release"
           mkdir -p "$OUTPUT_DIR/out"
           find "$OUTPUT_DIR" -name "*-signed.apk" -o -name "*-unsigned-signed.apk" | xargs -I{} mv {} "$OUTPUT_DIR/out/app-universal-test-release.apk"
 
       - name: Upload Signed APK
+        if: steps.check_secrets.outputs.available == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: app-universal-test-release
