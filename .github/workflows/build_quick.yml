@@ -72,7 +72,7 @@ jobs:
 
       - name: Verify APK exists and check signature status
         run: |
-          OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
+          OUTPUT_DIR="app/build/outputs/apk/foss/release"
           echo "Listing APK files:"
           ls -lh "$OUTPUT_DIR"/*.apk 2>/dev/null || echo "No APKs found in $OUTPUT_DIR"
           
