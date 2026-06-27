@@ -51,6 +51,14 @@ jobs:
             -keysize 2048 \
             -validity 10000 \
             -dname "CN=CI Test,O=Metrolist,C=US"
+      - name: Verify keystore was created
+        run: |
+          if [ ! -f "app/ci-test.keystore" ]; then
+            echo "ERROR: Keystore file not created!"
+            exit 1
+          fi
+          ls -lh app/ci-test.keystore
+          keytool -list -keystore app/ci-test.keystore -storepass android -alias androiddebugkey
 
       - name: Build Release APK (No Lint)
         run: ./gradlew --console=plain assembleFossRelease --warning-mode summary -x lint -x lintFossRelease
@@ -61,6 +69,26 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
+
+      - name: Verify APK exists and check signature status
+        run: |
+          OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
+          echo "Listing APK files:"
+          ls -lh "$OUTPUT_DIR"/*.apk 2>/dev/null || echo "No APKs found in $OUTPUT_DIR"
+          
+          APK_PATH=$(find "$OUTPUT_DIR" -maxdepth 1 -name "*.apk" -type f | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "ERROR: No APK file found!"
+            exit 1
+          fi
+          echo "Found APK: $APK_PATH"
+          
+          # Check if already signed
+          if "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK_PATH" 2>/dev/null; then
+            echo "WARNING: APK is already signed! This may cause issues."
+          else
+            echo "APK appears to be unsigned (expected)"
+          fi
 
       - name: Sign APK
         uses: ilharp/sign-android-release@v2.0.0
