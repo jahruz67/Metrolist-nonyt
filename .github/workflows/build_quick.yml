@@ -83,3 +83,10 @@ jobs:
         with:
           name: app-universal-test-release
           path: app/build/outputs/apk/foss/release/out/*
+
+      - name: Upload Unsigned Release APK
+        if: steps.check_secrets.outputs.available != 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: app-universal-test-release-unsigned
+          path: app/build/outputs/apk/foss/release/*.apk

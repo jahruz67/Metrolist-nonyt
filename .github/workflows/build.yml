@@ -99,6 +99,13 @@ jobs:
           name: ${{ matrix.variant == 'gms' && 'app-with-Google-Cast' || 'app-release' }}
           path: app/build/outputs/apk/${{ matrix.variant }}/release/out/*
 
+      - name: Upload Unsigned Release APK
+        if: steps.check_secrets.outputs.available != 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.variant == 'gms' && 'app-with-Google-Cast-unsigned' || 'app-release-unsigned' }}
+          path: app/build/outputs/apk/${{ matrix.variant }}/release/*.apk
+
   build_debug:
     name: Build Debug (${{ matrix.variant }})
     if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
