@@ -168,6 +168,9 @@ val StreamSourceVisionOSKey = booleanPreferencesKey("streamSourceVisionOS")
 val StreamSourceIOSKey = booleanPreferencesKey("streamSourceIOS")
 val StreamSourceWebCreatorKey = booleanPreferencesKey("streamSourceWebCreator")
 val StreamSourceAndroidCreatorKey = booleanPreferencesKey("streamSourceAndroidCreator")
+val EnableNonYouTubeAudioKey = booleanPreferencesKey("enableNonYouTubeAudio")
+val StreamSourceQobuzKennyyKey = booleanPreferencesKey("streamSourceQobuzKennyy")
+val StreamSourceQobuzSquidKey = booleanPreferencesKey("streamSourceQobuzSquid")
 
 val EnableDynamicIconKey = booleanPreferencesKey("enableDynamicIcon")
 

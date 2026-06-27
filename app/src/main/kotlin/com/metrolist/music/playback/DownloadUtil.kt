@@ -162,9 +162,12 @@ constructor(
                 upsert(updatedSong)
             }
 
-            val streamUrl = playbackData.streamUrl.let {
-                "${it}&range=0-${actualContentLength}"
-            }
+            val streamUrl =
+                if (playbackData.streamClient.startsWith("QOBUZ_")) {
+                    playbackData.streamUrl
+                } else {
+                    "${playbackData.streamUrl}&range=0-${actualContentLength}"
+                }
 
             songUrlCache[mediaId] = streamUrl to playbackData.streamExpiresInSeconds * 1000L
             dataSpec.withUri(streamUrl.toUri())

@@ -39,9 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
+import com.metrolist.music.constants.EnableNonYouTubeAudioKey
 import com.metrolist.music.constants.StreamSourceAndroidCreatorKey
 import com.metrolist.music.constants.StreamSourceAndroidVRKey
 import com.metrolist.music.constants.StreamSourceIOSKey
+import com.metrolist.music.constants.StreamSourceQobuzKennyyKey
+import com.metrolist.music.constants.StreamSourceQobuzSquidKey
 import com.metrolist.music.constants.StreamSourceTVHTML5Key
 import com.metrolist.music.constants.StreamSourceVisionOSKey
 import com.metrolist.music.constants.StreamSourceWebCreatorKey
@@ -57,6 +60,9 @@ import com.metrolist.music.utils.rememberPreference
 fun StreamSourcesSettings(
     navController: NavController
 ) {
+    val (nonYouTubeAudio, onNonYouTubeAudioChange) = rememberPreference(EnableNonYouTubeAudioKey, defaultValue = false)
+    val (qobuzKennyy, onQobuzKennyyChange) = rememberPreference(StreamSourceQobuzKennyyKey, defaultValue = true)
+    val (qobuzSquid, onQobuzSquidChange) = rememberPreference(StreamSourceQobuzSquidKey, defaultValue = false)
     val (webRemix, onWebRemixChange) = rememberPreference(StreamSourceWebRemixKey, defaultValue = true)
     val (tvhtml5, onTvhtml5Change) = rememberPreference(StreamSourceTVHTML5Key, defaultValue = true)
     val (visionOS, onVisionOSChange) = rememberPreference(StreamSourceVisionOSKey, defaultValue = true)
@@ -77,6 +83,12 @@ fun StreamSourcesSettings(
         stringResource(R.string.stream_source_android_creator) to androidCreator,
     ).filter { it.second }.map { it.first }
 
+    val nonYouTubeStreamOrder = listOf(
+        stringResource(R.string.stream_source_qobuz_kennyy) to qobuzKennyy,
+        stringResource(R.string.stream_source_qobuz_squid) to qobuzSquid,
+        stringResource(R.string.stream_source_youtube_fallback) to true,
+    ).filter { it.second }.map { it.first }
+
     Column(
         Modifier
             .windowInsetsPadding(
@@ -93,6 +105,21 @@ fun StreamSourcesSettings(
             )
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Material3SettingsGroup(
+            items = listOf(
+                streamClientItem(
+                    R.string.stream_source_enable_non_youtube,
+                    R.string.stream_source_enable_non_youtube_desc,
+                    nonYouTubeAudio,
+                    onNonYouTubeAudioChange,
+                ),
+            )
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         Text(
             text = stringResource(R.string.stream_source_order),
             style = MaterialTheme.typography.labelMedium,
@@ -106,7 +133,7 @@ fun StreamSourcesSettings(
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
         ) {
-            streamOrder.forEachIndexed { index, name ->
+            (if (nonYouTubeAudio) nonYouTubeStreamOrder else streamOrder).forEachIndexed { index, name ->
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = MaterialTheme.colorScheme.secondaryContainer,
@@ -123,34 +150,53 @@ fun StreamSourcesSettings(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Material3SettingsGroup(
-            title = stringResource(R.string.stream_source_web_clients),
-            items = listOf(
-                streamClientItem(R.string.stream_source_web_remix, R.string.stream_source_web_remix_desc, webRemix, onWebRemixChange),
-                streamClientItem(R.string.stream_source_tvhtml5, R.string.stream_source_tvhtml5_desc, tvhtml5, onTvhtml5Change),
+        if (nonYouTubeAudio) {
+            Material3SettingsGroup(
+                title = stringResource(R.string.stream_source_non_youtube_apis),
+                items = listOf(
+                    streamClientItem(R.string.stream_source_qobuz_kennyy, R.string.stream_source_qobuz_kennyy_desc, qobuzKennyy, onQobuzKennyyChange),
+                    streamClientItem(R.string.stream_source_qobuz_squid, R.string.stream_source_qobuz_squid_desc, qobuzSquid, onQobuzSquidChange),
+                )
             )
-        )
 
-        Spacer(modifier = Modifier.height(27.dp))
+            Spacer(modifier = Modifier.height(27.dp))
 
-        Material3SettingsGroup(
-            title = stringResource(R.string.stream_source_native_clients),
-            items = listOf(
-                streamClientItem(R.string.stream_source_visionos, R.string.stream_source_visionos_desc, visionOS, onVisionOSChange),
-                streamClientItem(R.string.stream_source_android_vr, R.string.stream_source_android_vr_desc, androidVR, onAndroidVRChange),
-                streamClientItem(R.string.stream_source_ios, R.string.stream_source_ios_desc, ios, onIosChange),
+            Material3SettingsGroup(
+                title = stringResource(R.string.stream_source_fallback),
+                items = listOf(
+                    streamInfoItem(R.string.stream_source_youtube_fallback, R.string.stream_source_youtube_fallback_desc),
+                )
             )
-        )
-
-        Spacer(modifier = Modifier.height(27.dp))
-
-        Material3SettingsGroup(
-            title = stringResource(R.string.stream_source_creator_clients),
-            items = listOf(
-                streamClientItem(R.string.stream_source_web_creator, R.string.stream_source_web_creator_desc, webCreator, onWebCreatorChange),
-                streamClientItem(R.string.stream_source_android_creator, R.string.stream_source_android_creator_desc, androidCreator, onAndroidCreatorChange),
+        } else {
+            Material3SettingsGroup(
+                title = stringResource(R.string.stream_source_web_clients),
+                items = listOf(
+                    streamClientItem(R.string.stream_source_web_remix, R.string.stream_source_web_remix_desc, webRemix, onWebRemixChange),
+                    streamClientItem(R.string.stream_source_tvhtml5, R.string.stream_source_tvhtml5_desc, tvhtml5, onTvhtml5Change),
+                )
             )
-        )
+
+            Spacer(modifier = Modifier.height(27.dp))
+
+            Material3SettingsGroup(
+                title = stringResource(R.string.stream_source_native_clients),
+                items = listOf(
+                    streamClientItem(R.string.stream_source_visionos, R.string.stream_source_visionos_desc, visionOS, onVisionOSChange),
+                    streamClientItem(R.string.stream_source_android_vr, R.string.stream_source_android_vr_desc, androidVR, onAndroidVRChange),
+                    streamClientItem(R.string.stream_source_ios, R.string.stream_source_ios_desc, ios, onIosChange),
+                )
+            )
+
+            Spacer(modifier = Modifier.height(27.dp))
+
+            Material3SettingsGroup(
+                title = stringResource(R.string.stream_source_creator_clients),
+                items = listOf(
+                    streamClientItem(R.string.stream_source_web_creator, R.string.stream_source_web_creator_desc, webCreator, onWebCreatorChange),
+                    streamClientItem(R.string.stream_source_android_creator, R.string.stream_source_android_creator_desc, androidCreator, onAndroidCreatorChange),
+                )
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
@@ -195,4 +241,14 @@ private fun streamClientItem(
         )
     },
     onClick = { onCheckedChange(!checked) },
+)
+
+@Composable
+private fun streamInfoItem(
+    @StringRes titleRes: Int,
+    @StringRes descriptionRes: Int,
+): Material3SettingsItem = Material3SettingsItem(
+    icon = painterResource(R.drawable.play),
+    title = { Text(stringResource(titleRes)) },
+    description = { Text(stringResource(descriptionRes)) },
 )

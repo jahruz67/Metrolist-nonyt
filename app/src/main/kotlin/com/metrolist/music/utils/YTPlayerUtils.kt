@@ -231,6 +231,25 @@ object YTPlayerUtils {
                 .i("Age-restricted content detected: videoId=$videoId, status=$currentStatus")
         }
 
+        NonYouTubeStreamResolver.resolve(
+            title = videoDetails?.title,
+            artist = videoDetails?.author,
+            durationSeconds = videoDetails?.lengthSeconds?.toIntOrNull(),
+            audioQuality = audioQuality,
+            connectivityManager = connectivityManager,
+        )?.let { nonYouTubeStream ->
+            Timber.tag(TAG).i("Playback: client=${nonYouTubeStream.source.clientName}, videoId=$videoId")
+            return@runCatching PlaybackData(
+                audioConfig = audioConfig,
+                videoDetails = videoDetails,
+                playbackTracking = playbackTracking,
+                format = nonYouTubeStream.toFormat(videoDetails?.lengthSeconds?.let { "${it}000" }),
+                streamUrl = nonYouTubeStream.url,
+                streamExpiresInSeconds = nonYouTubeStream.expiresInSeconds,
+                streamClient = nonYouTubeStream.source.clientName,
+            )
+        }
+
         // For age-restricted: skip main client, start with fallbacks
         // For normal content: standard order
         val startIndex = when {

@@ -161,6 +161,9 @@ import com.metrolist.music.constants.SimilarContent
 import com.metrolist.music.constants.SkipSilenceInstantKey
 import com.metrolist.music.constants.SkipSilenceKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
+import com.metrolist.music.constants.EnableNonYouTubeAudioKey
+import com.metrolist.music.constants.StreamSourceQobuzKennyyKey
+import com.metrolist.music.constants.StreamSourceQobuzSquidKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.FormatEntity
@@ -203,6 +206,7 @@ import com.metrolist.music.constants.LoudnessLevel
 import com.metrolist.music.constants.LoudnessLevelKey
 import com.metrolist.music.utils.CoilBitmapLoader
 import com.metrolist.music.utils.NetworkConnectivityObserver
+import com.metrolist.music.utils.NonYouTubeStreamResolver
 import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.getArtistSeparator
@@ -1186,6 +1190,22 @@ class MusicService :
                 }
                 .distinctUntilChanged()
                 .collect { YTPlayerUtils.disabledStreamClients = it }
+        }
+
+        scope.launch {
+            dataStore.data
+                .map { prefs ->
+                    (prefs[EnableNonYouTubeAudioKey] ?: false) to buildSet {
+                        if (prefs[StreamSourceQobuzKennyyKey] == false) add("QOBUZ_KENNYY")
+                        if (prefs[StreamSourceQobuzSquidKey] != true) add("QOBUZ_SQUID")
+                    }
+                }
+                .distinctUntilChanged()
+                .collect { (enabled, disabledSources) ->
+                    NonYouTubeStreamResolver.enabled = enabled
+                    NonYouTubeStreamResolver.disabledSources = disabledSources
+                    songUrlCache.clear()
+                }
         }
 
         if (startupPrefs!![PersistentQueueKey] ?: true) {

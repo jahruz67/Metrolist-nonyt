@@ -999,6 +999,16 @@
     <string name="enable_dynamic_icon_desc">Use dynamic theme colors for the app icon. When disabled, the icon uses solid colors.</string>
     <string name="stream_sources">Stream sources</string>
     <string name="stream_source_order">Stream order</string>
+    <string name="stream_source_enable_non_youtube">Turn on non-YouTube</string>
+    <string name="stream_source_enable_non_youtube_desc">Use non-YouTube APIs for audio streams while keeping YouTube for images, artist pages, browse data, and fallback playback.</string>
+    <string name="stream_source_non_youtube_apis">Non-YouTube APIs</string>
+    <string name="stream_source_fallback">Fallback</string>
+    <string name="stream_source_qobuz_kennyy">Qobuz (kennyy)</string>
+    <string name="stream_source_qobuz_kennyy_desc">Primary Qobuz proxy from the API documentation. No account or captcha required.</string>
+    <string name="stream_source_qobuz_squid">Qobuz (squid.wtf)</string>
+    <string name="stream_source_qobuz_squid_desc">Backup Qobuz proxy from the API documentation. Off by default because downloads can require captcha verification.</string>
+    <string name="stream_source_youtube_fallback">YouTube fallback</string>
+    <string name="stream_source_youtube_fallback_desc">Always available for tracks that cannot be safely matched or streamed from enabled non-YouTube APIs.</string>
     <string name="stream_source_web_clients">Web clients</string>
     <string name="stream_source_native_clients">Native clients</string>
     <string name="stream_source_creator_clients">Creator clients</string>
