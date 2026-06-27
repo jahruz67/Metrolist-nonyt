@@ -50,6 +50,18 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Generate test keystore for CI
+        run: |
+          keytool -genkeypair -v \
+            -keystore app/ci-test.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=CI Test,O=Metrolist,C=US"
+
       - name: Build Release APK and Run Lint
         run: ./gradlew --console=plain assemble${{ matrix.variantName }}Release :app:lint${{ matrix.variantName }}Release --warning-mode summary
         env:
@@ -60,28 +72,17 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
 
-      - name: Check signing secrets
-        id: check_secrets
-        run: |
-          if [ -n "${{ secrets.ANDROID_SIGNING_KEY }}" ] || [ -n "${{ secrets.KEYSTORE }}" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Sign APK
-        if: steps.check_secrets.outputs.available == 'true'
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/${{ matrix.variant }}/release/
-          signingKey: ${{ secrets.ANDROID_SIGNING_KEY || secrets.KEYSTORE }}
-          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD }}
+          signingKey: ${{ secrets.ANDROID_SIGNING_KEY || secrets.KEYSTORE || 'app/ci-test.keystore' }}
+          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS || secrets.KEY_ALIAS || 'androiddebugkey' }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || secrets.KEYSTORE_PASSWORD || 'android' }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.KEY_PASSWORD || 'android' }}
           buildToolsVersion: 35.0.0
 
       - name: Move signed APK
-        if: steps.check_secrets.outputs.available == 'true'
         run: |
           OUTPUT_DIR="app/build/outputs/apk/${{ matrix.variant }}/release"
           mkdir -p "$OUTPUT_DIR/out"
@@ -93,20 +94,12 @@ jobs:
           find "$OUTPUT_DIR" -name "*-signed.apk" -o -name "*-unsigned-signed.apk" | xargs -I{} mv {} "$OUTPUT_DIR/out/$TARGET_NAME"
 
       - name: Upload Signed APK
-        if: steps.check_secrets.outputs.available == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.variant == 'gms' && 'app-with-Google-Cast' || 'app-release' }}
           path: app/build/outputs/apk/${{ matrix.variant }}/release/out/*
 
-      - name: Upload Unsigned Release APK
-        if: steps.check_secrets.outputs.available != 'true'
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.variant == 'gms' && 'app-with-Google-Cast-unsigned' || 'app-release-unsigned' }}
-          path: app/build/outputs/apk/${{ matrix.variant }}/release/*.apk
-
-  build_debug:
+  build_debug:  build_debug:
     name: Build Debug (${{ matrix.variant }})
     if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
     runs-on: ubuntu-latest
