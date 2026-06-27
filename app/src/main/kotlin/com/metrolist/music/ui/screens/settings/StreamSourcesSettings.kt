@@ -45,6 +45,7 @@ import com.metrolist.music.constants.StreamSourceAndroidVRKey
 import com.metrolist.music.constants.StreamSourceIOSKey
 import com.metrolist.music.constants.StreamSourceQobuzKennyyKey
 import com.metrolist.music.constants.StreamSourceQobuzSquidKey
+import com.metrolist.music.constants.StreamSourceYoutubeFallbackKey
 import com.metrolist.music.constants.StreamSourceTVHTML5Key
 import com.metrolist.music.constants.StreamSourceVisionOSKey
 import com.metrolist.music.constants.StreamSourceWebCreatorKey
@@ -63,6 +64,7 @@ fun StreamSourcesSettings(
     val (nonYouTubeAudio, onNonYouTubeAudioChange) = rememberPreference(EnableNonYouTubeAudioKey, defaultValue = false)
     val (qobuzKennyy, onQobuzKennyyChange) = rememberPreference(StreamSourceQobuzKennyyKey, defaultValue = true)
     val (qobuzSquid, onQobuzSquidChange) = rememberPreference(StreamSourceQobuzSquidKey, defaultValue = false)
+    val (youtubeFallback, onYoutubeFallbackChange) = rememberPreference(StreamSourceYoutubeFallbackKey, defaultValue = true)
     val (webRemix, onWebRemixChange) = rememberPreference(StreamSourceWebRemixKey, defaultValue = true)
     val (tvhtml5, onTvhtml5Change) = rememberPreference(StreamSourceTVHTML5Key, defaultValue = true)
     val (visionOS, onVisionOSChange) = rememberPreference(StreamSourceVisionOSKey, defaultValue = true)
@@ -86,7 +88,7 @@ fun StreamSourcesSettings(
     val nonYouTubeStreamOrder = listOf(
         stringResource(R.string.stream_source_qobuz_kennyy) to qobuzKennyy,
         stringResource(R.string.stream_source_qobuz_squid) to qobuzSquid,
-        stringResource(R.string.stream_source_youtube_fallback) to true,
+        stringResource(R.string.stream_source_youtube_fallback) to youtubeFallback,
     ).filter { it.second }.map { it.first }
 
     Column(
@@ -164,7 +166,12 @@ fun StreamSourcesSettings(
             Material3SettingsGroup(
                 title = stringResource(R.string.stream_source_fallback),
                 items = listOf(
-                    streamInfoItem(R.string.stream_source_youtube_fallback, R.string.stream_source_youtube_fallback_desc),
+                    streamClientItem(
+                        R.string.stream_source_youtube_fallback,
+                        R.string.stream_source_youtube_fallback_desc,
+                        youtubeFallback,
+                        onYoutubeFallbackChange
+                    ),
                 )
             )
         } else {

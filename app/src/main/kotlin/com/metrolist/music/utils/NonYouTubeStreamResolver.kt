@@ -84,6 +84,9 @@ object NonYouTubeStreamResolver {
     @Volatile
     var disabledSources: Set<String> = emptySet()
 
+    @Volatile
+    var youtubeFallback = true
+
     private val json = Json { ignoreUnknownKeys = true }
     private val rateLimitMutex = Mutex()
     private var lastRequestAtMs = 0L

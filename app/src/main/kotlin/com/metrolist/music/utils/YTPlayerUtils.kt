@@ -250,6 +250,10 @@ object YTPlayerUtils {
             )
         }
 
+        if (NonYouTubeStreamResolver.enabled && !NonYouTubeStreamResolver.youtubeFallback) {
+            throw Exception("Non-YouTube stream resolution failed and YouTube fallback is disabled")
+        }
+
         // For age-restricted: skip main client, start with fallbacks
         // For normal content: standard order
         val startIndex = when {

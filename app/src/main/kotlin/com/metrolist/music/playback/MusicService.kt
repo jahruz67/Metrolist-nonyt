@@ -164,6 +164,7 @@ import com.metrolist.music.constants.StopMusicOnTaskClearKey
 import com.metrolist.music.constants.EnableNonYouTubeAudioKey
 import com.metrolist.music.constants.StreamSourceQobuzKennyyKey
 import com.metrolist.music.constants.StreamSourceQobuzSquidKey
+import com.metrolist.music.constants.StreamSourceYoutubeFallbackKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.FormatEntity
@@ -1195,15 +1196,20 @@ class MusicService :
         scope.launch {
             dataStore.data
                 .map { prefs ->
-                    (prefs[EnableNonYouTubeAudioKey] ?: false) to buildSet {
-                        if (prefs[StreamSourceQobuzKennyyKey] == false) add("QOBUZ_KENNYY")
-                        if (prefs[StreamSourceQobuzSquidKey] != true) add("QOBUZ_SQUID")
-                    }
+                    Triple(
+                        prefs[EnableNonYouTubeAudioKey] ?: false,
+                        buildSet {
+                            if (prefs[StreamSourceQobuzKennyyKey] == false) add("QOBUZ_KENNYY")
+                            if (prefs[StreamSourceQobuzSquidKey] != true) add("QOBUZ_SQUID")
+                        },
+                        prefs[StreamSourceYoutubeFallbackKey] ?: true
+                    )
                 }
                 .distinctUntilChanged()
-                .collect { (enabled, disabledSources) ->
+                .collect { (enabled, disabledSources, youtubeFallback) ->
                     NonYouTubeStreamResolver.enabled = enabled
                     NonYouTubeStreamResolver.disabledSources = disabledSources
+                    NonYouTubeStreamResolver.youtubeFallback = youtubeFallback
                     songUrlCache.clear()
                 }
         }

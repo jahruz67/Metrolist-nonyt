@@ -1008,7 +1008,7 @@
     <string name="stream_source_qobuz_squid">Qobuz (squid.wtf)</string>
     <string name="stream_source_qobuz_squid_desc">Backup Qobuz proxy from the API documentation. Off by default because downloads can require captcha verification.</string>
     <string name="stream_source_youtube_fallback">YouTube fallback</string>
-    <string name="stream_source_youtube_fallback_desc">Always available for tracks that cannot be safely matched or streamed from enabled non-YouTube APIs.</string>
+    <string name="stream_source_youtube_fallback_desc">If enabled, falls back to YouTube for tracks that cannot be safely matched or streamed from enabled non-YouTube APIs.</string>
     <string name="stream_source_web_clients">Web clients</string>
     <string name="stream_source_native_clients">Native clients</string>
     <string name="stream_source_creator_clients">Creator clients</string>
